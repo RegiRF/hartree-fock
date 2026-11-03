@@ -1,0 +1,45 @@
+
+### Água, RHF/6-31G* (geometria experimental)
+E_RHF = -76.009108 Eh   (18 funções de base, 10 elétrons)
+
+Orbitais canônicos (energia em eV, ocupação):
+  1a1 (O 1s)                   -559.33   occ = 2
+  2a1                           -36.49   occ = 2
+  1b2                           -19.22   occ = 2
+  3a1                           -15.54   occ = 2
+  1b1 (par isolado, HOMO)       -13.54   occ = 2
+  4a1 (LUMO)                      5.84   occ = 0
+  2b2                             8.28   occ = 0
+
+Koopmans: 1o potencial de ionização ~ 13.54 eV (experimental: 12.62 eV)
+Dipolo RHF = 2.22 D (experimental gás: 1.85 D) -> HF superestima a polaridade
+
+População de Mulliken (cargas):
+  O: -0.897
+  H: +0.449
+  H: +0.449
+  Obs.: cargas de Mulliken dependem muito da base; não são observáveis.
+  Força de campo como AMBER usa cargas RESP ajustadas ao potencial eletrostático
+  HF/6-31G*, justamente porque essa superpolarização imita a polarização em água.
+
+### H2 em cc-pVDZ: o problema da dissociação
+   R/Å         RHF         UHF         FCI  <S2>UHF
+  0.50   -1.048801   -1.048801   -1.079370    0.000
+  0.74   -1.128700   -1.128700   -1.163374    0.000
+  1.00   -1.100154   -1.100154   -1.140073    0.000
+  1.50   -1.002193   -1.021378   -1.061535    0.583
+  2.00   -0.921909   -1.002784   -1.017594    0.904
+  2.50   -0.865330   -0.999362   -1.003129    0.978
+  3.00   -0.826448   -0.998721   -0.999551    0.995
+  4.00   -0.782198   -0.998570   -0.998606    1.000
+Limite correto: 2 x E(H) = -0.9986 Eh (cc-pVDZ). RHF continua subindo: a função
+RHF de camada fechada mantém 50% de caráter iônico H+ H- em qualquer distância.
+
+### Interações não covalentes (kcal/mol, com counterpoise)
+Dímero de água (ligação de H): HF =  -3.57   MP2 =  -4.37   (referência CCSD(T)/CBS ~ -5.0)
+Dímero de benzeno sanduíche, 3.9 Å: HF =   3.73   MP2 =  -0.17   (referência CCSD(T)/CBS ~ -1.7)
+HF dá REPULSÃO no empilhamento: a dispersão de London é correlação eletrônica pura.
+MP2/6-31G* acerta o sinal mas subestima (base pequena demais para dispersão);
+no limite de base completa o MP2 SUPERESTIMA o empilhamento (~ -3.3 kcal/mol).
+Para números confiáveis: CCSD(T)/DLPNO-CCSD(T), ou DFT com correção D3/D4.
+

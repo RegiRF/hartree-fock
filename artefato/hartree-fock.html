@@ -1,0 +1,841 @@
+<title>Hartree-Fock e Orbitais Moleculares</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js"></script>
+<style>
+/* Layout: coluna de leitura de ~68ch com índice fixo à esquerda em telas largas; o laboratório ocupa a largura toda da coluna. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #121826;
+  --ink-2: #485266;
+  --ink-3: #737d90;
+  --rule: #dce1ea;
+  --accent: #5a43cf;
+  --accent-soft: #ece8fb;
+  --phase-pos: #5a43cf;
+  --phase-neg: #c98500;
+  --s-rhf: #2a78d6;
+  --s-uhf: #eb6834;
+  --s-fci: #1baf7a;
+  --warn-bg: #fff6e5;
+  --warn-ink: #7a4b00;
+  --font-display: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d111a; --surface: #151b27; --ink: #e6e9f0; --ink-2: #aab3c3; --ink-3: #7d879a;
+    --rule: #263045; --accent: #9a8ff0; --accent-soft: #221f3d; --phase-pos: #9a8ff0; --phase-neg: #d99a1c;
+    --s-rhf: #3987e5; --s-uhf: #d95926; --s-fci: #199e70; --warn-bg: #2a2110; --warn-ink: #f1c773;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d111a; --surface: #151b27; --ink: #e6e9f0; --ink-2: #aab3c3; --ink-3: #7d879a;
+  --rule: #263045; --accent: #9a8ff0; --accent-soft: #221f3d; --phase-pos: #9a8ff0; --phase-neg: #d99a1c;
+  --s-rhf: #3987e5; --s-uhf: #d95926; --s-fci: #199e70; --warn-bg: #2a2110; --warn-ink: #f1c773;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 18px; line-height: 1.62; }
+.page {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px;
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 96px;
+}
+@media (min-width: 1040px) { .page { grid-template-columns: 220px minmax(0, 1fr); } }
+nav.toc { display: none; }
+@media (min-width: 1040px) {
+  nav.toc { display: block; position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); align-self: start;
+    font-family: var(--font-display); font-size: 13.5px; line-height: 1.4; }
+}
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; counter-reset: s; }
+nav.toc li { counter-increment: s; }
+nav.toc a { color: var(--ink-2); text-decoration: none; display: grid; grid-template-columns: 22px 1fr; }
+nav.toc a::before { content: counter(s); color: var(--ink-3); font-family: var(--font-mono); font-size: 12px; }
+nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); }
+nav.toc .toc-label { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; color: var(--ink-3); margin-bottom: 12px; }
+main { min-width: 0; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.15; letter-spacing: -0.01em; }
+h1 { font-size: clamp(34px, 5vw, 52px); font-weight: 800; margin: 0 0 16px; }
+h2 { font-size: 30px; font-weight: 800; margin: 72px 0 8px; scroll-margin-top: 24px; }
+h3 { font-size: 20px; font-weight: 700; margin: 36px 0 6px; }
+.eyebrow { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .1em; font-size: 12px; font-weight: 700; color: var(--accent); }
+h2 .num { font-family: var(--font-mono); font-weight: 400; color: var(--ink-3); font-size: 18px; margin-right: 10px; vertical-align: 4px; }
+p { margin: 0 0 16px; }
+a { color: var(--accent); }
+.lede { font-size: 21px; color: var(--ink-2); max-width: 60ch; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+.math-block { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: 8px 0 18px; }
+mjx-container[display="true"] { margin: .6em 0 !important; }
+mjx-container { color: var(--ink); }
+.callout { background: var(--accent-soft); border-radius: 6px; padding: 16px 20px; margin: 20px 0; }
+.callout p:last-child { margin-bottom: 0; }
+.callout .tag { font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+.warn { background: var(--warn-bg); color: var(--ink); }
+.warn .tag { color: var(--warn-ink); }
+ol.steps { padding-left: 0; list-style: none; counter-reset: st; display: grid; gap: 10px; }
+ol.steps li { counter-increment: st; display: grid; grid-template-columns: 34px minmax(0, 1fr); }
+ol.steps li::before { content: counter(st); font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+ul { padding-left: 22px; }
+li { margin-bottom: 6px; }
+.hero { display: grid; gap: 32px; grid-template-columns: minmax(0, 1fr); align-items: center; }
+@media (min-width: 760px) { .hero { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+.hero svg { width: 100%; height: auto; max-width: 420px; }
+.hero figcaption { font-family: var(--font-display); font-size: 13px; color: var(--ink-3); }
+.meta { font-family: var(--font-display); font-size: 14px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px; }
+.tablewrap { overflow-x: auto; margin: 16px 0 24px; }
+table { border-collapse: collapse; font-size: 15.5px; width: 100%; min-width: 560px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--rule); }
+th { font-family: var(--font-display); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 700; }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sev { display: inline-block; font-family: var(--font-display); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid currentColor; white-space: nowrap; }
+.sev.alta { color: var(--s-uhf); }
+.sev.media { color: var(--phase-neg); }
+.sev.baixa { color: var(--s-fci); }
+
+/* ---------- laboratório ---------- */
+.lab { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 24px; margin: 24px 0; }
+@media (max-width: 520px) { .lab { padding: 16px; } }
+.lab-controls { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: end; margin-bottom: 20px; font-family: var(--font-display); font-size: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-weight: 700; background: transparent; color: var(--ink-2); border: 0; padding: 7px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.seg button:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ctl label { display: block; color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; margin-bottom: 6px; }
+.ctl-r { flex: 1 1 260px; min-width: 0; }
+.ctl-r .row { display: flex; gap: 12px; align-items: center; }
+input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); }
+.rval { font-family: var(--font-mono); font-variant-numeric: tabular-nums; min-width: 12ch; color: var(--ink); }
+.lab-grid { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr); margin-top: 24px; }
+@media (min-width: 700px) { .lab-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } }
+.panel { min-width: 0; }
+.panel h4 { font-family: var(--font-display); font-size: 15px; color: var(--ink); margin: 0 0 8px; font-weight: 700; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--font-display); font-size: 11px; fill: var(--ink-3); }
+.chart .gridline { stroke: var(--rule); stroke-width: 1; }
+.chart .axis { stroke: var(--ink-3); stroke-width: 1; }
+.chart .ref { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 4; }
+.chart .cursor { stroke: var(--accent); stroke-width: 1.5; }
+.chart .hover { stroke: var(--ink-2); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 10px; font-family: var(--font-mono); font-size: 12px; line-height: 1.5; box-shadow: 0 4px 16px rgba(0,0,0,.12); white-space: nowrap; color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--font-display); font-size: 13px; color: var(--ink-2); margin: 4px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+.legend i.dash { border-top-style: dashed; }
+.legend i.dot { border-top-style: dotted; }
+.readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.readout div { background: var(--surface); padding: 10px 12px; min-width: 0; }
+.readout dt { font-family: var(--font-display); font-size: 13px; color: var(--ink-3); font-weight: 700; }
+.readout dd { margin: 2px 0 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 15px; }
+.readout dd small { color: var(--ink-3); font-size: 11px; }
+.scf { font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; width: 100%; min-width: 0; }
+.scf td, .scf th { padding: 4px 8px 4px 0; }
+.scf th { text-transform: none; letter-spacing: 0; font-size: 12.5px; }
+.small-note { font-family: var(--font-display); font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
+.lab-note { font-size: 15.5px; color: var(--ink-2); margin-top: 16px; }
+.state { display: inline-block; font-family: var(--font-display); font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+.state.broken { background: var(--warn-bg); color: var(--warn-ink); }
+details { margin-top: 14px; font-size: 15px; }
+summary { cursor: pointer; font-family: var(--font-display); font-weight: 700; color: var(--ink-2); font-size: 14px; }
+pre.mermaid { background: transparent; text-align: center; overflow-x: auto; }
+.refs li { font-size: 16px; }
+footer { margin-top: 72px; border-top: 1px solid var(--rule); padding-top: 20px; font-family: var(--font-display); font-size: 13px; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+
+<div class="page">
+<nav class="toc" aria-label="Índice">
+  <div class="toc-label">Roteiro</div>
+  <ol>
+    <li><a href="#problema">O problema eletrônico</a></li>
+    <li><a href="#slater">Determinante de Slater</a></li>
+    <li><a href="#equacoes">As equações de HF</a></li>
+    <li><a href="#roothaan">Roothaan-Hall e o SCF</a></li>
+    <li><a href="#orbitais">O que é um orbital molecular</a></li>
+    <li><a href="#laboratorio">Laboratório: H₂ e HeH⁺</a></li>
+    <li><a href="#limitacoes">Limitações</a></li>
+    <li><a href="#biofisica">Dinâmica e biofísica</a></li>
+    <li><a href="#estudo">Para continuar</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <div>
+    <div class="eyebrow">Química quântica para quem vem da física</div>
+    <h1>Hartree-Fock e orbitais moleculares</h1>
+    <p class="lede">Cada elétron se move no campo médio criado pelos outros, e o antissimétrico de Pauli entra exatamente. Essa única aproximação define o que é um orbital molecular, explica por que ele funciona tão bem e por que falha onde a biofísica mais precisa.</p>
+    <div class="meta"><span>Unidades atômicas: bohr, hartree</span><span>1 E<sub>h</sub> = 27,211 eV = 627,5 kcal/mol</span></div>
+  </div>
+  <figure style="margin:0">
+    <svg viewBox="0 0 420 300" role="img" aria-label="Diagrama de níveis do H2: dois orbitais 1s atômicos se combinam em um orbital ligante sigma-g, ocupado por dois elétrons, e um antiligante sigma-u vazio.">
+      <g font-family="Manrope, system-ui, sans-serif" font-size="13">
+        <line x1="40" y1="150" x2="110" y2="150" stroke="var(--ink)" stroke-width="2.5"/>
+        <line x1="310" y1="150" x2="380" y2="150" stroke="var(--ink)" stroke-width="2.5"/>
+        <line x1="170" y1="230" x2="250" y2="230" stroke="var(--s-rhf)" stroke-width="3"/>
+        <line x1="170" y1="62" x2="250" y2="62" stroke="var(--ink-3)" stroke-width="2.5" stroke-dasharray="6 4"/>
+        <g stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="2 4" fill="none">
+          <path d="M110 150 L170 230"/><path d="M310 150 L250 230"/><path d="M110 150 L170 62"/><path d="M310 150 L250 62"/>
+        </g>
+        <g stroke="var(--ink)" stroke-width="2" fill="none" stroke-linecap="round">
+          <path d="M66 166 L66 134 M60 141 L66 134 L72 141"/>
+          <path d="M346 134 L346 166 M340 159 L346 166 L352 159"/>
+          <path d="M200 246 L200 214 M194 221 L200 214 L206 221"/>
+          <path d="M220 214 L220 246 M214 239 L220 246 L226 239"/>
+        </g>
+        <text x="75" y="182" text-anchor="middle" fill="var(--ink-2)">1s<tspan font-size="10" dy="3">A</tspan></text>
+        <text x="345" y="182" text-anchor="middle" fill="var(--ink-2)">1s<tspan font-size="10" dy="3">B</tspan></text>
+        <text x="260" y="234" fill="var(--s-rhf)" font-weight="700">σ<tspan font-size="10" dy="3">g</tspan><tspan dy="-3" fill="var(--ink-3)" font-weight="400">  ε = −0,578</tspan></text>
+        <text x="260" y="66" fill="var(--ink-2)" font-weight="700">σ<tspan font-size="10" dy="3">u</tspan><tspan dy="-3" fill="var(--ink-3)" font-weight="400">  ε = +0,670</tspan></text>
+        <g transform="translate(210 280)">
+          <ellipse cx="-18" cy="0" rx="22" ry="12" fill="var(--phase-pos)" opacity=".75"/>
+          <ellipse cx="18" cy="0" rx="22" ry="12" fill="var(--phase-pos)" opacity=".75"/>
+        </g>
+        <g transform="translate(210 26)">
+          <ellipse cx="-24" cy="0" rx="20" ry="12" fill="var(--phase-pos)" opacity=".75"/>
+          <ellipse cx="24" cy="0" rx="20" ry="12" fill="var(--phase-neg)" opacity=".85"/>
+        </g>
+      </g>
+    </svg>
+    <figcaption>H₂ em STO-3G a 1,4 bohr. Energias orbitais em hartree, calculadas pelo código deste guia. Cor dos lóbulos = sinal da função de onda.</figcaption>
+  </figure>
+</header>
+
+<div class="prose">
+
+<h2 id="problema"><span class="num">1</span>O problema eletrônico</h2>
+<p>Na aproximação de Born-Oppenheimer os núcleos viram parâmetros e resolvemos, para cada geometria \(\mathbf R\), o problema eletrônico</p>
+<div class="math-block">\[
+\hat H_{\text{el}} = \underbrace{-\tfrac12\sum_i \nabla_i^2 \;-\; \sum_{i,A}\frac{Z_A}{r_{iA}}}_{\textstyle \sum_i \hat h(i)}\;+\;\sum_{i<j}\frac{1}{r_{ij}},\qquad
+\hat H_{\text{el}}\,\Psi(\mathbf x_1,\dots,\mathbf x_N;\mathbf R) = E_{\text{el}}(\mathbf R)\,\Psi .
+\]</div>
+<p>A curva \(E_{\text{el}}(\mathbf R) + V_{NN}(\mathbf R)\) é a <strong>superfície de energia potencial</strong>: é nela que os núcleos se movem numa simulação de dinâmica molecular. Toda a química quântica é uma sequência de aproximações para essa função, e a qualidade da dinâmica nunca é melhor que a qualidade da superfície.</p>
+<p>O termo que impede uma solução separável é \(1/r_{ij}\). Sem ele, \(\Psi\) seria um produto antissimetrizado de soluções de um elétron. Hartree-Fock pergunta: qual é o <em>melhor</em> produto antissimetrizado possível, mesmo com \(1/r_{ij}\) presente?</p>
+
+<h2 id="slater"><span class="num">2</span>Determinante de Slater e a energia HF</h2>
+<p>Com spin-orbitais \(\chi_i(\mathbf x) = \phi_i(\mathbf r)\sigma(\omega)\), o ansatz é</p>
+<div class="math-block">\[
+\Psi_{\text{HF}} = \frac{1}{\sqrt{N!}}\det\begin{pmatrix}\chi_1(\mathbf x_1) & \cdots & \chi_N(\mathbf x_1)\\ \vdots & & \vdots \\ \chi_1(\mathbf x_N) & \cdots & \chi_N(\mathbf x_N)\end{pmatrix}.
+\]</div>
+<p>O determinante é antissimétrico por construção e se anula se dois spin-orbitais coincidem: é o princípio de Pauli. As regras de Slater-Condon dão o valor esperado:</p>
+<div class="math-block">\[
+E_{\text{HF}} = \langle\Psi|\hat H|\Psi\rangle = \sum_i \langle i|\hat h|i\rangle + \frac12\sum_{i,j}\Big(\underbrace{[ii|jj]}_{J_{ij}} - \underbrace{[ij|ji]}_{K_{ij}}\Big),
+\qquad [ij|kl] = \int \frac{\chi_i^*(1)\chi_j(1)\,\chi_k^*(2)\chi_l(2)}{r_{12}}\,d\mathbf x_1 d\mathbf x_2 .
+\]</div>
+<ul>
+  <li>\(J_{ij}\) é a repulsão clássica entre as nuvens \(|\chi_i|^2\) e \(|\chi_j|^2\).</li>
+  <li>\(K_{ij}\) não tem análogo clássico. Vem da antissimetria e só é não nula para spins paralelos. Abaixa a energia porque elétrons de mesmo spin já se evitam (o <strong>buraco de Fermi</strong>).</li>
+  <li>Para \(i=j\), \(J_{ii}=K_{ii}\): o elétron não interage consigo mesmo. HF é livre de autointeração, uma propriedade que funcionais de DFT aproximados não têm e que motiva os funcionais híbridos.</li>
+</ul>
+<div class="callout"><span class="tag">O que falta</span>
+<p>O determinante correlaciona elétrons de mesmo spin (buraco de Fermi), mas elétrons de spins opostos são <em>estatisticamente independentes</em>: a probabilidade conjunta fatora. Falta o <strong>buraco de Coulomb</strong>. Toda a seção de limitações sai daqui.</p></div>
+
+<h2 id="equacoes"><span class="num">3</span>As equações de Hartree-Fock</h2>
+<p>Minimizamos \(E_{\text{HF}}[\{\chi\}]\) com a restrição \(\langle\chi_i|\chi_j\rangle=\delta_{ij}\) (multiplicadores de Lagrange \(\varepsilon_{ji}\)). Como a energia é invariante a rotações unitárias entre orbitais ocupados, podemos diagonalizar a matriz de multiplicadores e chegar à forma canônica:</p>
+<div class="math-block">\[
+\hat f\,\chi_i = \varepsilon_i\,\chi_i,\qquad \hat f(1) = \hat h(1) + \sum_{j}^{\text{ocup}}\big[\hat J_j(1) - \hat K_j(1)\big],
+\]</div>
+<div class="math-block">\[
+\hat J_j(1)\chi_i(1) = \Big[\int\frac{|\chi_j(2)|^2}{r_{12}}d\mathbf x_2\Big]\chi_i(1),\qquad
+\hat K_j(1)\chi_i(1) = \Big[\int\frac{\chi_j^*(2)\chi_i(2)}{r_{12}}d\mathbf x_2\Big]\chi_j(1).
+\]</div>
+<p>Três pontos que um físico deve guardar:</p>
+<ul>
+  <li><strong>Não linear.</strong> \(\hat f\) depende das próprias soluções. Resolve-se por iteração até autoconsistência: <em>campo autoconsistente</em> (SCF).</li>
+  <li><strong>Troca é não local.</strong> \(\hat J_j\) é um potencial multiplicativo; \(\hat K_j\) é um operador integral. É por isso que HF não é um "potencial efetivo" no sentido de Schrödinger, e é a parte mais cara do cálculo em sistemas grandes.</li>
+  <li><strong>A energia não é a soma das energias orbitais.</strong> \(\sum_i\varepsilon_i\) conta a repulsão duas vezes: \(E_{\text{HF}} = \sum_i\varepsilon_i - \tfrac12\sum_{ij}(J_{ij}-K_{ij})\).</li>
+</ul>
+
+<h2 id="roothaan"><span class="num">4</span>Roothaan-Hall e o ciclo SCF</h2>
+<p>Expandindo os orbitais espaciais numa base finita de funções atômicas (LCAO), \(\phi_i=\sum_\mu C_{\mu i}\,\varphi_\mu\), a equação integro-diferencial vira um problema de autovalor generalizado (aqui para camada fechada, RHF):</p>
+<div class="math-block">\[
+\mathbf F(\mathbf C)\,\mathbf C = \mathbf S\,\mathbf C\,\boldsymbol\varepsilon,\qquad
+F_{\mu\nu} = H^{\text{core}}_{\mu\nu} + \sum_{\lambda\sigma}P_{\lambda\sigma}\Big[(\mu\nu|\sigma\lambda) - \tfrac12(\mu\lambda|\sigma\nu)\Big],\qquad
+P_{\lambda\sigma} = 2\sum_{a}^{N/2} C_{\lambda a}C^*_{\sigma a}.
+\]</div>
+<p>\(\mathbf S\) é a sobreposição (a base não é ortogonal) e \(\mathbf P\) é a matriz densidade. A energia é \(E_0 = \tfrac12\sum_{\mu\nu}P_{\nu\mu}(H^{\text{core}}_{\mu\nu}+F_{\mu\nu}) + V_{NN}\). O algoritmo é uma sequência de fato:</p>
+<ol class="steps">
+  <li><span>Calcular as integrais \(S_{\mu\nu}\), \(H^{\text{core}}_{\mu\nu}\) e as \(\sim K^4/8\) integrais de dois elétrons \((\mu\nu|\lambda\sigma)\). Bases gaussianas existem porque o produto de duas gaussianas é uma gaussiana, e essas integrais saem em forma fechada.</span></li>
+  <li><span>Ortogonalizar: \(\mathbf X=\mathbf S^{-1/2}\), de modo que \(\mathbf X^\dagger\mathbf S\mathbf X=\mathbf 1\).</span></li>
+  <li><span>Chute inicial para \(\mathbf P\) (o mais simples: \(\mathbf P=0\), ou seja, diagonalizar \(\mathbf H^{\text{core}}\)).</span></li>
+  <li><span>Montar \(\mathbf F(\mathbf P)\), transformar \(\mathbf F'=\mathbf X^\dagger\mathbf F\mathbf X\) e diagonalizar: \(\mathbf F'\mathbf C'=\mathbf C'\boldsymbol\varepsilon\), \(\mathbf C=\mathbf X\mathbf C'\).</span></li>
+  <li><span>Ocupar os \(N/2\) orbitais de menor energia (aufbau), formar o novo \(\mathbf P\).</span></li>
+  <li><span>Repetir de 4 até que energia e densidade parem de mudar. Na prática usa-se extrapolação DIIS (Pulay) e amortecimento, senão a iteração oscila.</span></li>
+</ol>
+<pre class="mermaid">
+flowchart LR
+  A["Integrais S, H, (μν|λσ)"] --> B["Chute de P"]
+  B --> C["Monta F(P)"]
+  C --> D["Resolve FC = SCε"]
+  D --> E["Novo P (aufbau)"]
+  E --> F{"ΔE, ΔP < tol?"}
+  F -- não --> C
+  F -- sim --> G["E, orbitais, forças"]
+</pre>
+<p>Custo formal \(\mathcal O(K^4)\) pelas integrais de dois elétrons. Com triagem de integrais desprezíveis (Schwarz) e métodos de multipolo, cai para algo próximo de \(\mathcal O(K^2)\) em moléculas grandes, e para \(\mathcal O(K)\) com densidade esparsa em sistemas isolantes.</p>
+<p>No limite de base completa a energia converge para o <strong>limite Hartree-Fock</strong>. Essa é a resposta exata do modelo; qualquer diferença restante para o experimento é erro do modelo, não da base.</p>
+
+<h2 id="orbitais"><span class="num">5</span>O que é, afinal, um orbital molecular</h2>
+<p>Esta é a parte conceitualmente mais delicada, e a que mais se distorce em livros introdutórios.</p>
+<h3>Orbitais ocupados não são únicos</h3>
+<p>Uma rotação unitária \(\mathbf U\) entre orbitais ocupados multiplica o determinante por \(\det\mathbf U\), uma fase. A função de onda, a densidade e a energia não mudam. Os orbitais <strong>canônicos</strong> (autofunções de \(\hat f\)) são deslocalizados por toda a molécula e têm a simetria do grupo pontual. Os <strong>localizados</strong> (Boys, Pipek-Mezey, IBO) parecem ligações e pares isolados de Lewis. Os dois conjuntos descrevem o mesmo estado. A pergunta "o elétron está num orbital deslocalizado ou numa ligação?" não tem conteúdo físico dentro de HF.</p>
+<h3>Energias orbitais e o teorema de Koopmans</h3>
+<p>Se removermos um elétron do orbital \(a\) sem deixar os outros relaxarem, a energia de ionização é exatamente \(\text{IP} \approx -\varepsilon_a\). Para a água em HF/6-31G*, \(-\varepsilon_{\text{HOMO}} = 13{,}5\) eV contra 12,6 eV experimental. Funciona razoavelmente porque dois erros têm sinais opostos: a falta de relaxação orbital superestima o IP, a falta de correlação o subestima.</p>
+<p>Isso torna a "energia do HOMO" de HF fisicamente interpretável. O mesmo argumento para afinidade eletrônica (\(\text{EA}\approx-\varepsilon_{\text{LUMO}}\)) funciona mal, porque os dois erros se somam.</p>
+<h3>Orbitais virtuais são artefatos de base</h3>
+<p>Um orbital ocupado sente o campo de \(N-1\) outros elétrons. Um virtual sente \(N\): é o orbital de um elétron a mais, num ânion. Por isso os virtuais de HF são difusos, energeticamente altos e muito sensíveis à base. Consequências:</p>
+<ul>
+  <li>O gap HOMO-LUMO de HF é muito maior que a primeira excitação óptica. Não use \(\varepsilon_{\text{LUMO}}-\varepsilon_{\text{HOMO}}\) de HF como energia de excitação de um cromóforo.</li>
+  <li>Os virtuais são úteis como <em>espaço matemático</em> para métodos correlacionados (MP2, CI, CC), não como objetos físicos.</li>
+</ul>
+<h3>Variantes: RHF, UHF, ROHF</h3>
+<p><strong>RHF</strong> força o mesmo orbital espacial para α e β (camada fechada). <strong>UHF</strong> dá orbitais diferentes para cada spin: abaixa a energia em sistemas abertos e em ligações esticadas, mas a função deixa de ser autofunção de \(\hat S^2\) (<em>contaminação de spin</em>). <strong>ROHF</strong> mantém a simetria de spin para camadas abertas com uma energia mais alta. O laboratório abaixo mostra exatamente quando RHF e UHF se separam.</p>
+<h3>Teorema de Brillouin</h3>
+<p>Na solução HF, \(\langle\Psi_{\text{HF}}|\hat H|\Psi_a^r\rangle = 0\) para toda excitação simples. Excitações simples não corrigem diretamente a energia do estado fundamental; a correlação começa nas duplas. É por isso que MP2 e CISD começam por elas.</p>
+</div>
+
+<h2 id="laboratorio"><span class="num">6</span>Laboratório: H₂ e HeH⁺ em base mínima</h2>
+<div class="prose">
+<p>Um SCF real rodando no seu navegador: integrais gaussianas STO-3G calculadas na hora, RHF, UHF com chute de simetria quebrada e CI completo (que, nessa base, é a resposta exata). Arraste a distância. Os números batem com Szabo &amp; Ostlund (H₂ a 1,4 bohr: \(E_{\text{RHF}}=-1{,}1167\) E<sub>h</sub>).</p>
+</div>
+<section class="lab" aria-label="Laboratório Hartree-Fock">
+  <div class="lab-controls">
+    <div class="ctl">
+      <label id="mol-label">Molécula</label>
+      <div class="seg" role="group" aria-labelledby="mol-label">
+        <button type="button" id="mol-h2" aria-pressed="true">H₂</button>
+        <button type="button" id="mol-heh" aria-pressed="false">HeH⁺</button>
+      </div>
+    </div>
+    <div class="ctl ctl-r">
+      <label for="rslider">Distância internuclear R</label>
+      <div class="row">
+        <input type="range" id="rslider" min="0.6" max="6" step="0.02" value="1.4">
+        <span class="rval" id="rval">1.40 bohr</span>
+      </div>
+    </div>
+    <div class="ctl"><span class="state" id="state">RHF = UHF</span></div>
+  </div>
+  <div class="panel">
+      <h4>Curva de energia potencial <span class="small-note">(clique no gráfico para escolher R)</span></h4>
+      <div class="legend" id="leg-e">
+        <span><i style="border-color:var(--s-rhf)"></i>RHF</span>
+        <span><i style="border-color:var(--s-uhf)"></i>UHF</span>
+        <span><i style="border-color:var(--s-fci)"></i>CI completo (exato na base)</span>
+        <span><i class="dash" style="border-color:var(--ink-3)"></i>átomos separados</span>
+      </div>
+      <div class="chart" id="chart-e"></div>
+  </div>
+  <div class="lab-grid">
+    <div class="panel">
+      <h4>Valores em R</h4>
+      <dl class="readout" id="readout"></dl>
+    </div>
+    <div class="panel">
+      <h4>Iterações SCF (RHF, chute P = 0)</h4>
+      <div style="overflow-x:auto"><table class="scf" id="scf"></table></div>
+      <p class="small-note">Na iteração 1 a densidade ainda é zero, então a energia é só a repulsão nuclear V<sub>NN</sub>.</p>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:24px">
+    <h4>Orbitais ao longo do eixo da ligação, φ(0, 0, z)</h4>
+    <div class="legend">
+      <span><i style="border-color:var(--s-rhf)"></i>RHF σ (ocupado)</span>
+      <span><i class="dot" style="border-color:var(--s-rhf)"></i>RHF σ* (virtual)</span>
+      <span><i style="border-color:var(--s-uhf)"></i>UHF α ocupado</span>
+      <span><i class="dash" style="border-color:var(--s-uhf)"></i>UHF β ocupado</span>
+    </div>
+    <div class="chart" id="chart-mo"></div>
+  </div>
+  <p class="lab-note" id="lab-note"></p>
+  <details>
+    <summary>Tabela da curva (todas as distâncias calculadas)</summary>
+    <div class="tablewrap"><table id="curve-table"></table></div>
+  </details>
+</section>
+<div class="prose">
+<h3>O que observar</h3>
+<ul>
+  <li><strong>H₂ perto do equilíbrio:</strong> RHF erra por ~20 mE<sub>h</sub> (13 kcal/mol). O vetor CI é 99% \(\sigma_g^2\): o determinante único é uma boa descrição, e a energia de correlação é "dinâmica".</li>
+  <li><strong>H₂ esticado:</strong> RHF sobe sem limite físico. Expandindo \(\sigma_g(1)\sigma_g(2)\) em orbitais atômicos aparecem quatro termos com o mesmo peso: \(1s_A1s_B + 1s_B1s_A\) (covalente) e \(1s_A1s_A + 1s_B1s_B\) (iônico, H⁺H⁻). A função RHF impõe 50% de caráter iônico mesmo com os átomos a quilômetros. É <strong>correlação estática</strong>: \(\sigma_g^2\) e \(\sigma_u^2\) ficam degenerados e o peso de \(\sigma_u^2\) no CI vai a 50%.</li>
+  <li><strong>Ponto de Coulson-Fischer</strong> (~2,2 bohr aqui): a solução RHF deixa de ser estável e UHF quebra a simetria, localizando α num átomo e β no outro. A energia fica certa no limite, mas \(\langle S^2\rangle\to1\), uma mistura 50/50 de singleto e tripleto. Energia boa, função de onda errada: é o <em>dilema de simetria de Löwdin</em>.</li>
+  <li><strong>HeH⁺:</strong> dissocia em He + H⁺, ambos de camada fechada. RHF descreve a dissociação qualitativamente bem e UHF nunca quebra. Não é que HF "falha em quebrar ligações": falha quando a quebra deixa elétrons desemparelhados (homólise). Isso é exatamente o que acontece numa reação radicalar ou num centro metálico.</li>
+</ul>
+</div>
+
+<div class="prose">
+<h2 id="limitacoes"><span class="num">7</span>Limitações</h2>
+<p>A energia de correlação, \(E_{\text{corr}} = E_{\text{exata}} - E_{\text{HF-limite}}\) (definição de Löwdin), é pequena em termos relativos: cerca de 0,5% da energia total da água. Em termos absolutos são ~0,37 E<sub>h</sub>, uns 230 kcal/mol, muito maior que qualquer energia de reação ou de ligação de fármaco. A química vive nas <em>diferenças</em> de correlação entre estruturas, e essas diferenças raramente se cancelam.</p>
+<h3>Correlação dinâmica e estática</h3>
+<ul>
+  <li><strong>Dinâmica:</strong> elétrons de spin oposto se evitam a curta distância (o "cusp" de Kato em \(r_{12}\to0\)). Um determinante não tem esse buraco. Corrige-se com MP2, CCSD(T) ou, de modo aproximado, com DFT.</li>
+  <li><strong>Estática (ou forte):</strong> quando vários determinantes são quase degenerados (ligações quebrando, birradicais, metais de transição). Não há determinante único razoável; precisa-se de CASSCF, CASPT2, NEVPT2, DMRG.</li>
+</ul>
+<h3>Catálogo de erros sistemáticos</h3>
+</div>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Propriedade</th><th>Comportamento em HF</th><th>Ordem de grandeza</th><th>Relevância</th></tr></thead>
+  <tbody>
+    <tr><td>Dispersão de London</td><td>Ausente. É correlação pura; HF dá repulsão entre moléculas apolares.</td><td>Benzeno empilhado: +3,7 kcal/mol (HF) contra −1,7 (referência)</td><td><span class="sev alta">crítica</span></td></tr>
+    <tr><td>Quebra homolítica de ligação</td><td>RHF dissocia em estados iônicos; UHF contamina o spin.</td><td>Energias de atomização subestimadas pela metade (N₂); F₂ nem é ligado</td><td><span class="sev alta">crítica</span></td></tr>
+    <tr><td>Barreiras de reação</td><td>Superestimadas, inclusive transferência de próton.</td><td>Frequentemente 5 a 20 kcal/mol acima</td><td><span class="sev alta">alta</span></td></tr>
+    <tr><td>Estados de spin de metais</td><td>Favorece demais o alto spin (troca sem correlação).</td><td>Pode inverter o estado fundamental</td><td><span class="sev alta">alta</span></td></tr>
+    <tr><td>Excitações (CIS sobre HF)</td><td>Gap HOMO-LUMO enorme; CIS superestima excitações.</td><td>~1 eV acima em cromóforos orgânicos</td><td><span class="sev alta">alta</span></td></tr>
+    <tr><td>Momento de dipolo</td><td>Distribuição de carga polarizada demais.</td><td>Água 6-31G*: 2,22 D contra 1,85 D</td><td><span class="sev media">média</span></td></tr>
+    <tr><td>Frequências vibracionais</td><td>Ligações rígidas demais.</td><td>~10% altas; usa-se fator de escala ~0,90</td><td><span class="sev media">média</span></td></tr>
+    <tr><td>Ligação de hidrogênio</td><td>Majoritariamente eletrostática, então HF capta boa parte.</td><td>Dímero de água: −3,6 contra −5,0 kcal/mol</td><td><span class="sev media">média</span></td></tr>
+    <tr><td>Geometrias de equilíbrio</td><td>Ligações um pouco curtas.</td><td>~0,01 a 0,02 Å</td><td><span class="sev baixa">baixa</span></td></tr>
+  </tbody>
+</table>
+</div>
+<div class="prose">
+<p>Os números de água, benzeno e dímero de água foram calculados com o script <code>pyscf_exemplos.py</code> da documentação; os demais são valores típicos da literatura.</p>
+<h3>Limitações que não são de correlação</h3>
+<ul>
+  <li><strong>Base finita</strong> e erro de superposição de base (BSSE) em complexos: corrige-se com contrapeso de Boys-Bernardi.</li>
+  <li><strong>Instabilidades e múltiplas soluções SCF.</strong> As equações são não lineares: pode-se convergir num ponto de sela ou num mínimo local. Sempre vale testar a estabilidade da solução.</li>
+  <li><strong>Born-Oppenheimer</strong> (falha em interseções cônicas, essenciais em fotobiologia) e <strong>não relativístico</strong> (relevante a partir de metais 4d/5d).</li>
+  <li><strong>Sistemas metálicos:</strong> a troca não blindada faz a densidade de estados de HF se anular no nível de Fermi do gás de elétrons. HF não descreve metais.</li>
+</ul>
+
+<h2 id="biofisica"><span class="num">8</span>Dinâmica molecular e biofísica</h2>
+<p>HF quase nunca é o método final numa simulação biofísica moderna. Mas a sua estrutura está em quase toda a cadeia: nas cargas dos campos de força, no SCF de DFT e dos semiempíricos, na referência dos métodos correlacionados. Entender HF é entender o esqueleto de todos eles.</p>
+<h3>Forças: dinâmica de Born-Oppenheimer</h3>
+<p>Em dinâmica ab initio (BOMD) resolve-se o SCF a cada passo e propaga-se os núcleos classicamente, com \(M_A\ddot{\mathbf R}_A = -\nabla_A E_0(\mathbf R)\). Como a energia é variacional nos coeficientes, a derivada não precisa de \(\partial\mathbf C/\partial\mathbf R\):</p>
+<div class="math-block">\[
+\frac{\partial E_0}{\partial X_A} = \sum_{\mu\nu}P_{\nu\mu}\frac{\partial H^{\text{core}}_{\mu\nu}}{\partial X_A}
++ \frac12\sum_{\mu\nu\lambda\sigma}P_{\nu\mu}P_{\lambda\sigma}\frac{\partial\big[(\mu\nu|\sigma\lambda)-\tfrac12(\mu\lambda|\sigma\nu)\big]}{\partial X_A}
+- \sum_{\mu\nu}W_{\nu\mu}\frac{\partial S_{\mu\nu}}{\partial X_A} + \frac{\partial V_{NN}}{\partial X_A},
+\]</div>
+<p>com \(W_{\mu\nu}=2\sum_a\varepsilon_aC_{\mu a}C^*_{\nu a}\). O termo com \(\mathbf W\) é a <strong>força de Pulay</strong>: aparece porque as funções de base viajam com os núcleos. Consequências práticas para quem roda dinâmica:</p>
+<ul>
+  <li>As forças só são exatas no SCF convergido. Convergência frouxa gera forças não conservativas e <em>deriva de energia</em> no ensemble NVE. Car-Parrinello (massa fictícia para os orbitais) e BOMD com lagrangiana estendida (Niklasson) existem para contornar isso sem pagar um SCF completo a cada passo.</li>
+  <li>Passo de tempo de ~0,5 fs (vibrações X–H) e um SCF por passo limitam a dinâmica ab initio a dezenas ou centenas de picossegundos e a centenas de átomos. Enovelamento de proteína está fora de alcance.</li>
+  <li>Se a SCF salta de uma solução para outra (por exemplo, RHF ↔ UHF perto de um ponto de instabilidade, como no laboratório), a superfície tem uma descontinuidade na derivada e a trajetória sente uma força espúria.</li>
+</ul>
+<h3>QM/MM</h3>
+<p>Para enzimas, trata-se o sítio ativo com mecânica quântica e o resto da proteína e o solvente com um campo de força (Warshel e Levitt, 1976; Nobel de 2013 com Karplus). No acoplamento eletrostático as cargas MM entram em \(\hat h\) como um potencial externo e polarizam os orbitais do sítio QM. A região QM hoje é quase sempre DFT ou semiempírica. HF puro raramente é usado pelas barreiras superestimadas e pela falta de dispersão com os resíduos vizinhos.</p>
+<h3>Os semiempíricos são Hartree-Fock simplificado</h3>
+<p>MNDO, AM1, PM3, PM6 e PM7 são HF em base mínima de valência com a aproximação NDDO (despreza integrais de sobreposição diferencial entre átomos distintos) e integrais restantes parametrizadas contra dados experimentais. Herdam o ciclo SCF e a noção de orbital de HF, e por serem ~1000 vezes mais baratos permitem QM/MM com amostragem de nanossegundos para energias livres de reação enzimática. Os métodos tight-binding (DFTB, GFN-xTB) têm a mesma forma de matriz mas derivam de DFT.</p>
+<h3>Os campos de força clássicos carregam HF dentro deles</h3>
+<p>As cargas parciais do AMBER (método RESP, Bayly et al., 1993) são ajustadas ao potencial eletrostático <strong>HF/6-31G*</strong> da molécula isolada. A escolha é deliberada: HF superestima dipolos em ~10 a 20%, e esse excesso imita a polarização média que a molécula sofreria em água, algo que um campo de força de cargas fixas não tem como representar. O CHARMM (CGenFF) ajusta cargas a energias de interação HF/6-31G(d) com água, multiplicadas por 1,16 pela mesma razão. Um erro sistemático de HF virou, por cancelamento calibrado, uma característica dos campos de força que você usa em GROMACS ou NAMD.</p>
+<div class="callout warn"><span class="tag">Cuidado</span>
+<p>Esse cancelamento só vale para o protocolo exato com que o campo de força foi parametrizado. Gerar cargas RESP com B3LYP/def2-TZVP "porque é melhor" deixa os ligantes menos polares que a proteína e a água do mesmo campo, e o desequilíbrio aparece nas energias livres de ligação.</p></div>
+<h3>Correlação na biologia: onde HF não serve</h3>
+<ul>
+  <li><strong>Empilhamento de bases no DNA e reconhecimento proteína-ligante</strong> dependem de dispersão. HF prevê benzeno empilhado <em>repulsivo</em>. Use DFT-D3/D4, MP2 com cuidado, ou DLPNO-CCSD(T) como referência.</li>
+  <li><strong>Metaloproteínas</strong> (heme, centros Fe-S, o complexo Mn₄CaO₅ do fotossistema II, FeMoco da nitrogenase): estados de spin próximos e correlação estática. Exigem métodos multiconfiguracionais ou DFT com cuidado no funcional; o próprio teor de troca exata (HF) num híbrido muda a ordem dos estados de spin.</li>
+  <li><strong>Fotobiologia</strong> (retinal em rodopsina, cromóforo da GFP, clorofilas): estados excitados e interseções cônicas. CASSCF/CASPT2, ADC(2), TDDFT. O gap HF é enganoso.</li>
+  <li><strong>Transferência de carga e de próton:</strong> barreiras de HF altas demais; transferência de elétron de longo alcance precisa de acoplamentos e reorganização calculados com métodos correlacionados.</li>
+</ul>
+<h3>O papel de HF que permanece</h3>
+<ul>
+  <li><strong>Referência para métodos correlacionados.</strong> MP2, CCSD(T) e suas versões de orbitais locais (DLPNO, usadas em fragmentos de proteína com dezenas de átomos) partem do determinante HF.</li>
+  <li><strong>Kohn-Sham tem a mesma forma.</strong> As equações de DFT são as de HF com \(-\hat K\) trocado por um potencial de troca-correlação. Funcionais híbridos (B3LYP com 20% de troca HF, PBE0 com 25%, ωB97X-D com troca HF de longo alcance) reutilizam o cálculo de \(\hat K\) para reduzir o erro de autointeração.</li>
+  <li><strong>Métodos de fragmentos.</strong> FMO (Kitaura, 1999) divide a proteína em resíduos e calcula HF e MP2 por fragmento e pares, dando energias de interação resíduo-ligante usadas em desenho de fármacos.</li>
+  <li><strong>Métodos compostos baratos</strong> como HF-3c (Grimme): HF em base mínima com correções empíricas de dispersão e de BSSE, útil para pré-otimizar geometrias de sistemas com milhares de átomos.</li>
+</ul>
+<h3>Qual método para qual pergunta</h3>
+</div>
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Pergunta biofísica</th><th>Método típico</th><th>Onde HF entra</th></tr></thead>
+  <tbody>
+    <tr><td>Conformações e dinâmica de proteína (ns a μs)</td><td>MD clássica (AMBER, CHARMM)</td><td>Cargas RESP / CGenFF de HF/6-31G*</td></tr>
+    <tr><td>Mecanismo de reação enzimática</td><td>QM/MM com DFT; energia livre com semiempírico + correção</td><td>SCF; PM6/PM7 são HF simplificado</td></tr>
+    <tr><td>Energia de ligação de ligante (referência)</td><td>DLPNO-CCSD(T), DFT-D4</td><td>Determinante de referência</td></tr>
+    <tr><td>Parâmetros torsionais de ligante</td><td>MP2 ou DFT-D3 em varredura de diedro</td><td>Referência do MP2</td></tr>
+    <tr><td>Espectro de cromóforo</td><td>TDDFT, ADC(2), CASPT2 em QM/MM</td><td>Orbitais de partida</td></tr>
+    <tr><td>Sítio metálico</td><td>CASSCF/NEVPT2, DMRG, DFT com funcional escolhido com critério</td><td>Orbitais iniciais do espaço ativo</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="prose">
+<h2 id="estudo"><span class="num">9</span>Para continuar</h2>
+<p>A documentação que acompanha este guia tem as derivações completas (Slater-Condon, equações de HF por cálculo variacional, Koopmans, Brillouin), o código Python que roda este laboratório e experimentos em PySCF com água, H₂ em cc-pVDZ e dímeros de água e benzeno.</p>
+<ol class="refs">
+  <li>A. Szabo e N. S. Ostlund, <em>Modern Quantum Chemistry</em> (Dover). Capítulos 2 e 3 são a referência para tudo acima; o laboratório reproduz os exemplos do capítulo 3.</li>
+  <li>T. Helgaker, P. Jørgensen e J. Olsen, <em>Molecular Electronic-Structure Theory</em> (Wiley). Segunda quantização, gradientes, estabilidade.</li>
+  <li>F. Jensen, <em>Introduction to Computational Chemistry</em>, 3ª ed. Visão de praticante, incluindo campos de força e QM/MM.</li>
+  <li>D. Marx e J. Hutter, <em>Ab Initio Molecular Dynamics</em> (Cambridge). BOMD, Car-Parrinello.</li>
+  <li>H. M. Senn e W. Thiel, "QM/MM methods for biomolecular systems", <em>Angew. Chem. Int. Ed.</em> 48, 1198 (2009).</li>
+  <li>C. I. Bayly et al., "A well-behaved electrostatic potential based method using charge restraints (RESP)", <em>J. Phys. Chem.</em> 97, 10269 (1993).</li>
+  <li>PySCF (<a href="https://pyscf.org">pyscf.org</a>) para experimentar; Psi4NumPy tem tutoriais de HF em NumPy linha a linha.</li>
+</ol>
+</div>
+<footer>Integrais, SCF, UHF e CI deste laboratório são calculados em JavaScript no navegador com base STO-3G (ζ<sub>H</sub> = 1,24, ζ<sub>He</sub> = 2,0925).</footer>
+</main>
+</div>
+
+<script>
+(() => {
+"use strict";
+/* ================= Integrais STO-3G (gaussianas s) ================= */
+const D = [0.444635, 0.535328, 0.154329];
+const A1 = [0.109818, 0.405771, 2.22766];
+const ZETA = { H: 1.24, He: 2.0925 };
+const CHARGE = { H: 1, He: 2 };
+
+function erf(x) {
+  // Numerical Recipes erfc com aproximação de Chebyshev, erro relativo < 1.2e-7
+  const z = Math.abs(x), t = 1 / (1 + 0.5 * z);
+  const r = t * Math.exp(-z * z - 1.26551223 + t * (1.00002368 + t * (0.37409196 + t * (0.09678418 +
+    t * (-0.18628806 + t * (0.27886807 + t * (-1.13520398 + t * (1.48851587 + t * (-0.82215223 + t * 0.17087277)))))))));
+  return x >= 0 ? 1 - r : r - 1;
+}
+const F0 = t => t < 1e-8 ? 1 - t / 3 : 0.5 * Math.sqrt(Math.PI / t) * erf(Math.sqrt(t));
+
+function basisFn(el, z) {
+  const a = A1.map(x => x * ZETA[el] ** 2);
+  const c = D.map((d, i) => d * Math.pow(2 * a[i] / Math.PI, 0.75));
+  return { z, a, c };
+}
+// todas as funções e núcleos estão no eixo z
+function pS(a, A, b, B) { const p = a + b; return Math.pow(Math.PI / p, 1.5) * Math.exp(-a * b / p * (A - B) ** 2); }
+function pT(a, A, b, B) { const p = a + b, r2 = (A - B) ** 2, m = a * b / p; return m * (3 - 2 * m * r2) * Math.pow(Math.PI / p, 1.5) * Math.exp(-m * r2); }
+function pV(a, A, b, B, C, Z) { const p = a + b, P = (a * A + b * B) / p; return -2 * Math.PI / p * Z * Math.exp(-a * b / p * (A - B) ** 2) * F0(p * (P - C) ** 2); }
+function pERI(a, A, b, B, c, C, d, Dz) {
+  const p = a + b, q = c + d, P = (a * A + b * B) / p, Q = (c * C + d * Dz) / q;
+  return 2 * Math.PI ** 2.5 / (p * q * Math.sqrt(p + q)) * Math.exp(-a * b / p * (A - B) ** 2 - c * d / q * (C - Dz) ** 2) * F0(p * q / (p + q) * (P - Q) ** 2);
+}
+function integrals(basis, nuclei) {
+  const n = basis.length;
+  const mk = () => Array.from({ length: n }, () => new Array(n).fill(0));
+  const S = mk(), H = mk();
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const u = basis[i], v = basis[j];
+    let s = 0, t = 0, vv = 0;
+    for (let k = 0; k < 3; k++) for (let l = 0; l < 3; l++) {
+      const cc = u.c[k] * v.c[l];
+      s += cc * pS(u.a[k], u.z, v.a[l], v.z);
+      t += cc * pT(u.a[k], u.z, v.a[l], v.z);
+      for (const nu of nuclei) vv += cc * pV(u.a[k], u.z, v.a[l], v.z, nu.z, nu.Z);
+    }
+    S[i][j] = s; H[i][j] = t + vv;
+  }
+  const eri = new Float64Array(n ** 4);
+  const idx = (i, j, k, l) => ((i * n + j) * n + k) * n + l;
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (let k = 0; k < n; k++) for (let l = 0; l < n; l++) {
+    const f = [basis[i], basis[j], basis[k], basis[l]];
+    let s = 0;
+    for (let p = 0; p < 3; p++) for (let q = 0; q < 3; q++) for (let r = 0; r < 3; r++) for (let w = 0; w < 3; w++)
+      s += f[0].c[p] * f[1].c[q] * f[2].c[r] * f[3].c[w] * pERI(f[0].a[p], f[0].z, f[1].a[q], f[1].z, f[2].a[r], f[2].z, f[3].a[w], f[3].z);
+    eri[idx(i, j, k, l)] = s;
+  }
+  return { S, H, eri, n, idx };
+}
+
+/* ================= Álgebra linear pequena ================= */
+const zeros = n => Array.from({ length: n }, () => new Array(n).fill(0));
+const T = A => A[0].map((_, j) => A.map(r => r[j]));
+const mul = (A, B) => A.map(r => B[0].map((_, j) => r.reduce((s, x, k) => s + x * B[k][j], 0)));
+function eigSym(M) { // Jacobi; devolve autovalores crescentes e autovetores em colunas
+  const n = M.length, A = M.map(r => r.slice()), V = zeros(n);
+  for (let i = 0; i < n; i++) V[i][i] = 1;
+  for (let sweep = 0; sweep < 60; sweep++) {
+    let off = 0;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += A[p][q] ** 2;
+    if (off < 1e-26) break;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+      if (Math.abs(A[p][q]) < 1e-300) continue;
+      const th = 0.5 * Math.atan2(2 * A[p][q], A[q][q] - A[p][p]);
+      const c = Math.cos(th), s = Math.sin(th);
+      for (let k = 0; k < n; k++) { const akp = A[k][p], akq = A[k][q]; A[k][p] = c * akp - s * akq; A[k][q] = s * akp + c * akq; }
+      for (let k = 0; k < n; k++) { const apk = A[p][k], aqk = A[q][k]; A[p][k] = c * apk - s * aqk; A[q][k] = s * apk + c * aqk; }
+      for (let k = 0; k < n; k++) { const vkp = V[k][p], vkq = V[k][q]; V[k][p] = c * vkp - s * vkq; V[k][q] = s * vkp + c * vkq; }
+    }
+  }
+  const ord = [...Array(n).keys()].sort((i, j) => A[i][i] - A[j][j]);
+  return { w: ord.map(i => A[i][i]), V: V.map(r => ord.map(i => r[i])) };
+}
+function invSqrt(S) { const { w, V } = eigSym(S); const n = S.length; const Dm = zeros(n); w.forEach((x, i) => Dm[i][i] = 1 / Math.sqrt(x)); return mul(mul(V, Dm), T(V)); }
+function diagF(F, X) { const { w, V } = eigSym(mul(mul(T(X), F), X)); return { eps: w, C: mul(X, V) }; }
+const densOcc = (C, nocc, fac) => C.map((_, m) => C.map((_, v) => { let s = 0; for (let a = 0; a < nocc; a++) s += C[m][a] * C[v][a]; return fac * s; }));
+function JK(I, P) {
+  const { n, eri, idx } = I, J = zeros(n), K = zeros(n);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (let k = 0; k < n; k++) for (let l = 0; l < n; l++) {
+    J[i][j] += eri[idx(i, j, k, l)] * P[k][l];
+    K[i][j] += eri[idx(i, k, j, l)] * P[k][l];
+  }
+  return { J, K };
+}
+const add = (A, B, f = 1) => A.map((r, i) => r.map((x, j) => x + f * B[i][j]));
+const dot = (A, B) => A.reduce((s, r, i) => s + r.reduce((t, x, j) => t + x * B[i][j], 0), 0);
+
+/* ================= Métodos ================= */
+function rhf(I, X, nocc) {
+  let P = zeros(I.n), Eold = 0, hist = [], out;
+  for (let it = 1; it <= 100; it++) {
+    const { J, K } = JK(I, P);
+    const F = add(add(I.H, J), K, -0.5);
+    const Eel = 0.5 * dot(P, add(I.H, F));
+    const { eps, C } = diagF(F, X);
+    const Pn = densOcc(C, nocc, 2);
+    let d = 0; Pn.forEach((r, i) => r.forEach((x, j) => d += (x - P[i][j]) ** 2));
+    d = Math.sqrt(d / (I.n * I.n));
+    hist.push({ it, Eel, d });
+    out = { Eel, eps, C, P: Pn };
+    if (Math.abs(Eel - Eold) < 1e-11 && d < 1e-7) break;
+    P = Pn; Eold = Eel;
+  }
+  out.hist = hist; return out;
+}
+function uhf(I, X, rhfC, th = 0.4) {
+  const rot = (C, s) => C.map(r => [r[0] * Math.cos(th) + s * r[1] * Math.sin(th), -s * r[0] * Math.sin(th) + r[1] * Math.cos(th)]);
+  let Ca = rot(rhfC, 1), Cb = rot(rhfC, -1);
+  let Pa = densOcc(Ca, 1, 1), Pb = densOcc(Cb, 1, 1), Eold = 0, Eel = 0, it = 0;
+  for (it = 1; it <= 800; it++) {
+    const Pt = add(Pa, Pb);
+    const { J } = JK(I, Pt), Ka = JK(I, Pa).K, Kb = JK(I, Pb).K;
+    const Fa = add(add(I.H, J), Ka, -1), Fb = add(add(I.H, J), Kb, -1);
+    Eel = 0.5 * (dot(Pt, I.H) + dot(Pa, Fa) + dot(Pb, Fb));
+    Ca = diagF(Fa, X).C; Cb = diagF(Fb, X).C;
+    Pa = densOcc(Ca, 1, 1); Pb = densOcc(Cb, 1, 1);
+    if (Math.abs(Eel - Eold) < 1e-11) break;
+    Eold = Eel;
+  }
+  let sab = 0; for (let m = 0; m < I.n; m++) for (let v = 0; v < I.n; v++) sab += Ca[m][0] * I.S[m][v] * Cb[v][0];
+  return { Eel, Ca, Cb, S2: 1 - sab * sab, iters: it };
+}
+function fci(I, C) {
+  const n = I.n;
+  const h = mul(mul(T(C), I.H), C);
+  const g = (p, q, r, s) => { let t = 0; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) for (let k = 0; k < n; k++) for (let l = 0; l < n; l++) t += C[i][p] * C[j][q] * C[k][r] * C[l][s] * I.eri[I.idx(i, j, k, l)]; return t; };
+  const s2 = Math.SQRT2, a = s2 * (h[0][1] + g(0, 0, 0, 1)), b = s2 * (h[0][1] + g(1, 1, 0, 1));
+  const M = [[2 * h[0][0] + g(0, 0, 0, 0), a, g(0, 1, 0, 1)],
+             [a, h[0][0] + h[1][1] + g(0, 0, 1, 1) + g(0, 1, 1, 0), b],
+             [g(0, 1, 0, 1), b, 2 * h[1][1] + g(1, 1, 1, 1)]];
+  const { w, V } = eigSym(M);
+  return { Eel: w[0], vec: [V[0][0], V[1][0], V[2][0]] };
+}
+function atomE(el) { // RHF/STO-3G de um átomo isolado (1 função)
+  const f = basisFn(el, 0), I = integrals([f], [{ z: 0, Z: CHARGE[el] }]);
+  const ne = el === "He" ? 2 : 1;
+  return ne === 2 ? 2 * I.H[0][0] + I.eri[0] : I.H[0][0];
+}
+function compute(mol, R) {
+  const els = mol === "H2" ? ["H", "H"] : ["He", "H"];
+  const basis = [basisFn(els[0], 0), basisFn(els[1], R)];
+  const nuclei = [{ z: 0, Z: CHARGE[els[0]] }, { z: R, Z: CHARGE[els[1]] }];
+  const Vnn = CHARGE[els[0]] * CHARGE[els[1]] / R;
+  const I = integrals(basis, nuclei), X = invSqrt(I.S);
+  const r = rhf(I, X, 1), u = uhf(I, X, r.C), f = fci(I, r.C);
+  return { R, basis, I, Vnn, rhf: r, uhf: u, fci: f, Erhf: r.Eel + Vnn, Euhf: Math.min(u.Eel, r.Eel) + Vnn, Efci: f.Eel + Vnn };
+}
+
+/* ================= Gráficos SVG ================= */
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+function niceTicks(lo, hi, n) {
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+  return { ticks: out, step };
+}
+const fmt = (v, d) => v.toFixed(d).replace("-", "−");
+
+function lineChart(host, cfg) {
+  host.innerHTML = "";
+  const W = Math.max(280, Math.round(host.clientWidth || 640));
+  const H = Math.round(Math.min(cfg.height || 340, Math.max(220, W * 0.62))), m = { l: 56, r: 14, t: 12, b: 40 };
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": cfg.aria }, host);
+  const x = v => m.l + (v - cfg.x0) / (cfg.x1 - cfg.x0) * (W - m.l - m.r);
+  const y = v => m.t + (cfg.y1 - v) / (cfg.y1 - cfg.y0) * (H - m.t - m.b);
+  const clipId = "c" + Math.random().toString(36).slice(2);
+  const cp = el("clipPath", { id: clipId }, el("defs", {}, svg));
+  el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b }, cp);
+  const yt = niceTicks(cfg.y0, cfg.y1, H < 260 ? 4 : 6), xt = niceTicks(cfg.x0, cfg.x1, W < 420 ? 5 : 8);
+  yt.ticks.forEach(v => {
+    el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: "gridline" }, svg);
+    el("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = fmt(v, yt.step < 0.1 ? 2 : 1);
+  });
+  xt.ticks.forEach(v => {
+    el("line", { x1: x(v), x2: x(v), y1: H - m.b, y2: H - m.b + 4, class: "axis" }, svg);
+    el("text", { x: x(v), y: H - m.b + 17, "text-anchor": "middle" }, svg).textContent = fmt(v, xt.step < 1 ? 1 : 0);
+  });
+  el("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, class: "axis" }, svg);
+  el("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle" }, svg).textContent = cfg.xlabel;
+  const yl = el("text", { x: 14, y: (m.t + H - m.b) / 2, "text-anchor": "middle", transform: `rotate(-90 14 ${(m.t + H - m.b) / 2})` }, svg); yl.textContent = cfg.ylabel;
+  const g = el("g", { "clip-path": `url(#${clipId})` }, svg);
+  (cfg.refs || []).forEach(r => el("line", { x1: m.l, x2: W - m.r, y1: y(r.y), y2: y(r.y), class: "ref" }, g));
+  cfg.series.forEach(s => {
+    const d = s.pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
+    el("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 2, "stroke-dasharray": s.dash || "none", "stroke-linejoin": "round" }, g);
+  });
+  (cfg.markers || []).forEach(mk => {
+    el("circle", { cx: x(mk.x), cy: y(mk.y), r: 5, fill: mk.fill, stroke: "var(--surface)", "stroke-width": 2 }, svg);
+    if (mk.label) el("text", { x: x(mk.x), y: y(mk.y) + 20, "text-anchor": "middle", style: "font-weight:700;fill:var(--ink-2)" }, svg).textContent = mk.label;
+  });
+  if (cfg.cursor != null) el("line", { x1: x(cfg.cursor), x2: x(cfg.cursor), y1: m.t, y2: H - m.b, class: "cursor" }, svg);
+  // camada de hover: crosshair + tooltip
+  const hv = el("line", { y1: m.t, y2: H - m.b, class: "hover", visibility: "hidden" }, svg);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; host.appendChild(tip);
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+  const move = ev => {
+    const bb = svg.getBoundingClientRect(), sx = (ev.clientX - bb.left) * W / bb.width;
+    const xv = cfg.x0 + (sx - m.l) / (W - m.l - m.r) * (cfg.x1 - cfg.x0);
+    if (xv < cfg.x0 || xv > cfg.x1) return;
+    const rows = cfg.tooltip(xv); if (!rows) return;
+    hv.setAttribute("x1", x(rows.x)); hv.setAttribute("x2", x(rows.x)); hv.setAttribute("visibility", "visible");
+    tip.innerHTML = rows.html; tip.hidden = false;
+    const px = x(rows.x) / W * bb.width, hb = host.getBoundingClientRect();
+    const left = px + 14 + tip.offsetWidth > hb.width ? px - tip.offsetWidth - 14 : px + 14;
+    tip.style.left = Math.max(0, left) + "px"; tip.style.top = "8px";
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerleave", () => { hv.setAttribute("visibility", "hidden"); tip.hidden = true; });
+  if (cfg.onClick) hit.addEventListener("click", ev => {
+    const bb = svg.getBoundingClientRect(), sx = (ev.clientX - bb.left) * W / bb.width;
+    cfg.onClick(cfg.x0 + (sx - m.l) / (W - m.l - m.r) * (cfg.x1 - cfg.x0));
+  });
+}
+
+/* ================= Estado e UI ================= */
+const RGRID = []; for (let r = 0.6; r <= 6.0001; r += 0.05) RGRID.push(+r.toFixed(2));
+const cache = {};
+function curve(mol) {
+  if (!cache[mol]) cache[mol] = RGRID.map(R => { const c = compute(mol, R); return { R, rhf: c.Erhf, uhf: c.Euhf, fci: c.Efci, s2: c.Euhf < c.Erhf - 1e-7 ? c.uhf.S2 : 0 }; });
+  return cache[mol];
+}
+const limits = { H2: 2 * atomE("H"), "HeH+": atomE("He") };
+let mol = "H2";
+const $ = id => document.getElementById(id);
+const sl = $("rslider");
+
+function orbitalAt(fn, z) { let s = 0; for (let k = 0; k < 3; k++) s += fn.c[k] * Math.exp(-fn.a[k] * (z - fn.z) ** 2); return s; }
+function moCurve(basis, coef, z0, z1) {
+  const pts = []; for (let z = z0; z <= z1 + 1e-9; z += (z1 - z0) / 220) pts.push([z, basis.reduce((s, b, i) => s + coef[i] * orbitalAt(b, z), 0)]);
+  return pts;
+}
+const col = (C, j) => C.map(r => r[j]);
+function fixSign(v, ref = 0) { return v[ref] < 0 ? v.map(x => -x) : v; }
+
+function render() {
+  const R = +sl.value;
+  $("rval").textContent = R.toFixed(2) + " bohr · " + (R * 0.529177).toFixed(2) + " Å";
+  const cur = curve(mol), c = compute(mol, R), lim = limits[mol];
+  const broken = c.Euhf < c.Erhf - 1e-7;
+  const ymin = Math.min(...cur.map(p => p.fci)) - 0.03;
+  const ymax = mol === "H2" ? -0.55 : ymin + 0.62;
+  lineChart($("chart-e"), {
+    x0: 0.6, x1: 6, y0: ymin, y1: ymax, xlabel: "R (bohr)", ylabel: "E (hartree)", cursor: R,
+    aria: "Curvas de energia RHF, UHF e CI completo em função de R",
+    refs: [{ y: lim }],
+    series: [
+      { pts: cur.map(p => [p.R, p.fci]), color: "var(--s-fci)" },
+      { pts: cur.map(p => [p.R, p.uhf]), color: "var(--s-uhf)" },
+      { pts: cur.map(p => [p.R, p.rhf]), color: "var(--s-rhf)" }
+    ],
+    markers: [{ x: R, y: c.Erhf, fill: "var(--s-rhf)" }, { x: R, y: c.Efci, fill: "var(--s-fci)" }],
+    tooltip: xv => {
+      const p = cur.reduce((a, b) => Math.abs(b.R - xv) < Math.abs(a.R - xv) ? b : a);
+      return { x: p.R, html: `R = ${p.R.toFixed(2)} bohr<br><span style="color:var(--s-rhf)">■</span> RHF ${fmt(p.rhf, 4)}<br><span style="color:var(--s-uhf)">■</span> UHF ${fmt(p.uhf, 4)}<br><span style="color:var(--s-fci)">■</span> FCI ${fmt(p.fci, 4)}<br>E<sub>corr</sub> ${fmt(1000 * (p.fci - p.rhf), 1)} mE<sub>h</sub>` };
+    },
+    onClick: xv => { sl.value = Math.min(6, Math.max(0.6, xv)).toFixed(2); render(); }
+  });
+
+  // leitura
+  const ecorr = (c.Efci - c.Erhf) * 1000, w2 = c.fci.vec[2] ** 2;
+  const items = [
+    ["E RHF", fmt(c.Erhf, 5) + " <small>Eh</small>"],
+    ["E UHF", fmt(c.Euhf, 5) + " <small>Eh</small>"],
+    ["E CI completo", fmt(c.Efci, 5) + " <small>Eh</small>"],
+    ["E corr (FCI − RHF)", fmt(ecorr, 2) + " <small>mEh</small>"],
+    ["ε σ (HOMO)", fmt(c.rhf.eps[0], 4) + " <small>Eh</small>"],
+    ["ε σ* (LUMO)", fmt(c.rhf.eps[1], 4) + " <small>Eh</small>"],
+    ["IP Koopmans", fmt(-c.rhf.eps[0] * 27.2114, 2) + " <small>eV</small>"],
+    ["peso σ*² no CI", (100 * w2).toFixed(1) + " <small>%</small>"],
+    ["⟨S²⟩ UHF", (broken ? c.uhf.S2 : 0).toFixed(3) + " <small>(singleto puro = 0)</small>"],
+    ["V<sub>NN</sub>", fmt(c.Vnn, 4) + " <small>Eh</small>"]
+  ];
+  $("readout").innerHTML = items.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+  const st = $("state");
+  st.textContent = broken ? "simetria de spin quebrada: UHF < RHF" : "RHF = UHF (solução estável)";
+  st.className = "state" + (broken ? " broken" : "");
+
+  // SCF
+  const hist = c.rhf.hist;
+  $("scf").innerHTML = "<thead><tr><th>it</th><th>E total (Eh)</th><th>rms ΔP</th></tr></thead><tbody>" +
+    hist.map(h => `<tr><td>${h.it}</td><td>${fmt(h.Eel + c.Vnn, 8)}</td><td>${h.d.toExponential(1)}</td></tr>`).join("") + "</tbody>";
+
+  // orbitais
+  const z0 = -2.5, z1 = R + 2.5;
+  const sOcc = (c.rhf.C[0][0] + c.rhf.C[1][0]) < 0 ? col(c.rhf.C, 0).map(x => -x) : col(c.rhf.C, 0);
+  const sVir = fixSign(col(c.rhf.C, 1), 0);
+  const series = [
+    { pts: moCurve(c.basis, sOcc, z0, z1), color: "var(--s-rhf)" },
+    { pts: moCurve(c.basis, sVir, z0, z1), color: "var(--s-rhf)", dash: "2 4", width: 1.6 }
+  ];
+  if (broken) {
+    const fa = col(c.uhf.Ca, 0), fb = col(c.uhf.Cb, 0);
+    const sa = fa[0] + fa[1] < 0 ? fa.map(x => -x) : fa, sb = fb[0] + fb[1] < 0 ? fb.map(x => -x) : fb;
+    series.push({ pts: moCurve(c.basis, sa, z0, z1), color: "var(--s-uhf)" });
+    series.push({ pts: moCurve(c.basis, sb, z0, z1), color: "var(--s-uhf)", dash: "7 5" });
+  }
+  const all = series.flatMap(s => s.pts.map(p => p[1]));
+  const yA = Math.max(...all.map(Math.abs)) * 1.1;
+  const names = mol === "H2" ? ["H", "H"] : ["He", "H"];
+  lineChart($("chart-mo"), {
+    x0: z0, x1: z1, y0: -yA, y1: yA, height: 260, xlabel: "z (bohr)", ylabel: "φ (bohr⁻³ᐟ²)",
+    aria: "Amplitude dos orbitais moleculares ao longo do eixo internuclear",
+    refs: [{ y: 0 }], series,
+    markers: [{ x: 0, y: 0, fill: "var(--ink-2)", label: names[0] }, { x: R, y: 0, fill: "var(--ink-2)", label: names[1] }],
+    tooltip: xv => {
+      const z = xv, val = coef => c.basis.reduce((s, b, i) => s + coef[i] * orbitalAt(b, z), 0);
+      let h = `z = ${z.toFixed(2)} bohr<br><span style="color:var(--s-rhf)">■</span> σ ${fmt(val(sOcc), 3)}<br><span style="color:var(--s-rhf)">□</span> σ* ${fmt(val(sVir), 3)}`;
+      return { x: z, html: h };
+    }
+  });
+
+  // nota
+  let note;
+  if (mol === "H2") {
+    note = !broken
+      ? (R < 2 ? `Perto do equilíbrio o determinante σ² domina (peso ${(100 * (1 - w2)).toFixed(1)}%). O SCF converge em 2 iterações porque, por simetria, os orbitais σ e σ* são fixados pela base mínima: só a primeira diagonalização importa.`
+               : `RHF ainda é estável, mas o peso de σ*² no CI já é ${(100 * w2).toFixed(1)}%. A correlação está deixando de ser "pequena".`)
+      : `Além do ponto de Coulson-Fischer: UHF localiza o elétron α num átomo e β no outro (curvas laranja). A energia melhora ${fmt((c.Erhf - c.Euhf) * 627.5, 1)} kcal/mol em relação ao RHF, mas ⟨S²⟩ = ${c.uhf.S2.toFixed(2)} mostra mistura com o tripleto. RHF fica ${fmt((c.Erhf - lim) * 627.5, 0)} kcal/mol acima dos átomos separados.`;
+  } else {
+    note = `HeH⁺ é assimétrico: o orbital σ concentra-se no He e o SCF precisa de ${hist.length} iterações. Na dissociação os dois elétrons ficam no He (He + H⁺), um limite de camada fechada que RHF descreve bem. E_corr ≈ ${fmt(ecorr, 1)} mEh fica quase constante com R: correlação dinâmica, que se cancela em diferenças de energia.`;
+  }
+  $("lab-note").textContent = note;
+
+  // tabela
+  $("curve-table").innerHTML = "<thead><tr><th>R (bohr)</th><th>RHF</th><th>UHF</th><th>FCI</th><th>⟨S²⟩ UHF</th></tr></thead><tbody>" +
+    cur.filter((_, i) => i % 4 === 0).map(p => `<tr><td class="num">${p.R.toFixed(2)}</td><td class="num">${fmt(p.rhf, 6)}</td><td class="num">${fmt(p.uhf, 6)}</td><td class="num">${fmt(p.fci, 6)}</td><td class="num">${p.s2.toFixed(3)}</td></tr>`).join("") + "</tbody>";
+}
+
+function setMol(m) {
+  mol = m;
+  $("mol-h2").setAttribute("aria-pressed", m === "H2");
+  $("mol-heh").setAttribute("aria-pressed", m === "HeH+");
+  sl.value = m === "H2" ? "1.40" : "1.46";
+  render();
+}
+$("mol-h2").addEventListener("click", () => setMol("H2"));
+$("mol-heh").addEventListener("click", () => setMol("HeH+"));
+let raf = 0;
+sl.addEventListener("input", () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(render); });
+render();
+let lastW = 0;
+new ResizeObserver(() => { const w = $("chart-e").clientWidth; if (Math.abs(w - lastW) > 4) { lastW = w; cancelAnimationFrame(raf); raf = requestAnimationFrame(render); } }).observe($("chart-e"));
+window.__hf = { compute, limits };
+})();
+</script>
